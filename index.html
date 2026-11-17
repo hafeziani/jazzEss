@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>100 Jazz Albums</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #ffffff;
+    --ink: #111111;
+    --muted: #6b6b6b;
+    --gap: 6px;
+    --overlay: rgba(10, 10, 10, 0.82);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #0d0d0d; --ink: #f2f2f2; --muted: #9a9a9a; }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: Inter, system-ui, sans-serif;
+  }
+  header {
+    padding: 40px var(--gap) 28px; text-align: center;
+  }
+  h1 {
+    font-family: "Bebas Neue", Impact, sans-serif; font-weight: 400;
+    font-size: clamp(40px, 8vw, 104px); line-height: .9; letter-spacing: .02em; margin: 0;
+  }
+  .sub { color: var(--muted); font-size: 14px; margin-top: 12px; letter-spacing: .04em; }
+  .controls { margin-top: 18px; display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+  .controls button {
+    font: 600 12px Inter, sans-serif; letter-spacing: .06em; text-transform: uppercase;
+    background: transparent; color: var(--ink); border: 1px solid var(--ink);
+    padding: 7px 14px; cursor: pointer;
+  }
+  .controls button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+
+  .grid {
+    display: grid; gap: var(--gap); padding: var(--gap);
+    grid-template-columns: repeat(var(--cols, 10), 1fr);
+  }
+  @media (max-width: 1100px) { .grid { --cols: 8 !important; } }
+  @media (max-width: 800px)  { .grid { --cols: 5 !important; } }
+  @media (max-width: 480px)  { .grid { --cols: 3 !important; } }
+
+  .tile {
+    position: relative; aspect-ratio: 1; overflow: hidden; cursor: zoom-in;
+    background: #1a1a1a; border: 0; padding: 0; display: block; width: 100%;
+  }
+  .tile img {
+    width: 100%; height: 100%; object-fit: cover; display: block;
+    transition: transform .35s ease, filter .35s ease;
+  }
+  .tile.wide img { object-fit: contain; }
+  .tile .info {
+    position: absolute; inset: 0; background: var(--overlay); color: #fff;
+    display: flex; flex-direction: column; justify-content: flex-end; text-align: left;
+    padding: 10px; opacity: 0; transition: opacity .25s ease;
+    font-size: 12px; line-height: 1.3;
+  }
+  .tile .rank {
+    position: absolute; top: 6px; left: 8px;
+    font-family: "Bebas Neue", Impact, sans-serif; font-size: 30px; line-height: 1;
+  }
+  .tile .album { font-weight: 600; font-size: 13px; }
+  .tile .meta { color: #cfcfcf; margin-top: 2px; }
+  .tile:hover img, .tile:focus-visible img { transform: scale(1.05); filter: blur(1px); }
+  .tile:hover .info, .tile:focus-visible .info { opacity: 1; }
+  .show-ranks .tile .badge { display: block; }
+  .badge {
+    display: none; position: absolute; top: 0; left: 0; background: var(--ink); color: var(--bg);
+    font: 600 11px Inter, sans-serif; padding: 3px 6px;
+  }
+
+  .lightbox {
+    position: fixed; inset: 0; background: rgba(0,0,0,.92); display: none;
+    align-items: center; justify-content: center; flex-direction: column; gap: 16px; padding: 24px;
+    z-index: 10; cursor: zoom-out;
+  }
+  .lightbox.open { display: flex; }
+  .lightbox img { max-width: min(80vw, 640px); max-height: 70vh; box-shadow: 0 20px 60px rgba(0,0,0,.6); }
+  .lightbox .cap { color: #fff; text-align: center; }
+  .lightbox .cap .n { font-family: "Bebas Neue", Impact, sans-serif; font-size: 40px; line-height: 1; }
+  .lightbox .cap .t { font-weight: 600; font-size: 18px; margin-top: 4px; }
+  .lightbox .cap .m { color: #bbb; font-size: 14px; margin-top: 4px; }
+  .lightbox .nav {
+    position: absolute; top: 50%; transform: translateY(-50%); background: none; border: 0;
+    color: #fff; font-size: 44px; cursor: pointer; padding: 12px; opacity: .7;
+  }
+  .lightbox .nav:hover { opacity: 1; }
+  .lightbox .prev { left: 8px; } .lightbox .next { right: 8px; }
+
+  footer { text-align: center; color: var(--muted); font-size: 12px; padding: 20px 16px 32px; }
+</style>
+</head>
+<body>
+<main class="grid" id="grid"></main>
+
+<div class="lightbox" id="lb" role="dialog" aria-modal="true" aria-label="Album cover">
+  <button class="nav prev" aria-label="Previous">‹</button>
+  <img alt="">
+  <div class="cap"><div class="n"></div><div class="t"></div><div class="m"></div></div>
+  <button class="nav next" aria-label="Next">›</button>
+</div>
+
+<footer>Covers © their respective labels and artists. List: Jazzwise / Wikipedia.</footer>
+
+<script>
+const ALBUMS = [{"n": 1, "artist": "Miles Davis", "album": "Kind of Blue", "label": "Columbia", "year": "1959", "img": "001_Miles_Davis_-_Kind_of_Blue.jpg"}, {"n": 2, "artist": "John Coltrane", "album": "A Love Supreme", "label": "Impulse!", "year": "1964", "img": "002_John_Coltrane_-_A_Love_Supreme.jpg"}, {"n": 3, "artist": "Ornette Coleman", "album": "The Shape of Jazz to Come", "label": "Atlantic", "year": "1959", "img": "003_Ornette_Coleman_-_The_Shape_of_Jazz_to_Come.jpg"}, {"n": 4, "artist": "Bill Evans Trio", "album": "Sunday at the Village Vanguard", "label": "Riverside", "year": "1961", "img": "004_Bill_Evans_Trio_-_Sunday_at_the_Village_Vanguard.jpg"}, {"n": 5, "artist": "Sonny Rollins", "album": "Saxophone Colossus", "label": "Prestige", "year": "1956", "img": "005_Sonny_Rollins_-_Saxophone_Colossus.jpg"}, {"n": 6, "artist": "Thelonious Monk", "album": "Brilliant Corners", "label": "Riverside", "year": "1956", "img": "006_Thelonious_Monk_-_Brilliant_Corners.jpg"}, {"n": 7, "artist": "Charles Mingus", "album": "Mingus Ah Um", "label": "Columbia", "year": "1959", "img": "007_Charles_Mingus_-_Mingus_Ah_Um.jpg"}, {"n": 8, "artist": "Charlie Parker", "album": "Bird: The Complete Original Master Takes. The Savoy Recordings", "label": "Savoy Jazz", "year": "1945–1948", "img": "008_Charlie_Parker_-_Bird_The_Complete_Original_Master_Takes.jpg"}, {"n": 9, "artist": "Miles Davis", "album": "Bitches Brew", "label": "Columbia", "year": "1969", "img": "009_Miles_Davis_-_Bitches_Brew.jpg"}, {"n": 10, "artist": "Keith Jarrett", "album": "The Köln Concert", "label": "ECM", "year": "1975", "img": "010_Keith_Jarrett_-_The_Koln_Concert.jpg"}, {"n": 11, "artist": "John Coltrane", "album": "Giant Steps", "label": "Atlantic", "year": "1959", "img": "011_John_Coltrane_-_Giant_Steps.jpg"}, {"n": 12, "artist": "Eric Dolphy", "album": "Out to Lunch!", "label": "Blue Note", "year": "1964", "img": "012_Eric_Dolphy_-_Out_to_Lunch.png"}, {"n": 13, "artist": "Louis Armstrong", "album": "The Complete Hot Fives and Hot Seven Recordings", "label": "Columbia", "year": "1925–1930", "img": "013_Louis_Armstrong_-_The_Complete_Hot_Fives_and_Hot_Sevens.jpg"}, {"n": 14, "artist": "Duke Ellington", "album": "The Blanton-Webster Band", "label": "RCA Bluebird", "year": "1940–1942", "img": "014_Duke_Ellington_-_The_Blanton-Webster_Band.jpg"}, {"n": 15, "artist": "Mahavishnu Orchestra", "album": "The Inner Mounting Flame", "label": "Columbia", "year": "1971", "img": "015_Mahavishnu_Orchestra_-_The_Inner_Mounting_Flame.jpg"}, {"n": 16, "artist": "Albert Ayler", "album": "Spiritual Unity", "label": "ESP-Disk", "year": "1964", "img": "016_Albert_Ayler_-_Spiritual_Unity.jpg"}, {"n": 17, "artist": "Herbie Hancock", "album": "Head Hunters", "label": "Columbia", "year": "1973", "img": "017_Herbie_Hancock_-_Head_Hunters.png"}, {"n": 18, "artist": "Dave Brubeck", "album": "Time Out", "label": "Columbia", "year": "1959", "img": "018_Dave_Brubeck_-_Time_Out.jpg"}, {"n": 19, "artist": "Ornette Coleman", "album": "Free Jazz", "label": "Atlantic", "year": "1960", "img": "019_Ornette_Coleman_-_Free_Jazz.jpg"}, {"n": 20, "artist": "Weather Report", "album": "Heavy Weather", "label": "Columbia", "year": "1976", "img": "020_Weather_Report_-_Heavy_Weather.jpg"}, {"n": 21, "artist": "Ahmad Jamal", "album": "At the Pershing: But Not for Me", "label": "Argo", "year": "1958", "img": "021_Ahmad_Jamal_-_At_the_Pershing_But_Not_for_Me.jpg"}, {"n": 22, "artist": "Jelly Roll Morton", "album": "Volume 1", "label": "JSP", "year": "1926–1928", "img": "022_Jelly_Roll_Morton_-_Volume_1.jpg"}, {"n": 23, "artist": "Frank Sinatra", "album": "Songs for Swingin’ Lovers", "label": "Capitol", "year": "1955–1956", "img": "023_Frank_Sinatra_-_Songs_for_Swingin_Lovers.jpg"}, {"n": 24, "artist": "Wes Montgomery", "album": "The Incredible Jazz Guitar of Wes Montgomery", "label": "Riverside", "year": "1960", "img": "024_Wes_Montgomery_-_The_Incredible_Jazz_Guitar_of_Wes_Montgomery.jpg"}, {"n": 25, "artist": "Modern Jazz Quartet", "album": "Fontessa", "label": "Atlantic", "year": "1956", "img": "025_Modern_Jazz_Quartet_-_Fontessa.jpg"}, {"n": 26, "artist": "Bud Powell", "album": "The Genius of Bud Powell", "label": "Clef/Verve", "year": "1951/52", "img": "026_Bud_Powell_-_The_Genius_of_Bud_Powell.jpg"}, {"n": 27, "artist": "Cecil Taylor", "album": "At the Café Montmartre", "label": "Debut", "year": "1962", "img": "027_Cecil_Taylor_-_At_the_Cafe_Montmartre.jpg"}, {"n": 28, "artist": "Art Blakey", "album": "Moanin’", "label": "Blue Note", "year": "1958", "img": "028_Art_Blakey_-_Moanin.jpg"}, {"n": 29, "artist": "Herbie Hancock", "album": "Maiden Voyage", "label": "Blue Note", "year": "1965", "img": "029_Herbie_Hancock_-_Maiden_Voyage.jpg"}, {"n": 30, "artist": "Stan Getz/João Gilberto", "album": "Getz/Gilberto", "label": "Verve", "year": "1965", "img": "030_Stan_Getz_Joao_Gilberto_-_Getz_Gilberto.jpg"}, {"n": 31, "artist": "Pat Metheny", "album": "Bright Size Life", "label": "ECM", "year": "1976", "img": "031_Pat_Metheny_-_Bright_Size_Life.jpg"}, {"n": 32, "artist": "Jimmy Smith", "album": "A New Sound... A New Star...", "label": "Blue Note", "year": "1956", "img": "032_Jimmy_Smith_-_A_New_Sound_A_New_Star.jpg"}, {"n": 33, "artist": "Jan Garbarek", "album": "Afric Pepperbird", "label": "ECM", "year": "1970", "img": "033_Jan_Garbarek_-_Afric_Pepperbird.jpg"}, {"n": 34, "artist": "Woody Herman", "album": "The Thundering Herds", "label": "Columbia", "year": "1945–1947", "img": "034_Woody_Herman_-_The_Thundering_Herds.jpg"}, {"n": 35, "artist": "Duke Ellington", "album": "Ellington at Newport", "label": "Columbia", "year": "1956", "img": "035_Duke_Ellington_-_Ellington_at_Newport.jpg"}, {"n": 36, "artist": "Ella Fitzgerald", "album": "Ella Fitzgerald Sings the Cole Porter Songbook", "label": "Verve", "year": "1956", "img": "036_Ella_Fitzgerald_-_Ella_Fitzgerald_Sings_the_Cole_Porter_Songbook.jpg"}, {"n": 37, "artist": "Charles Mingus", "album": "The Black Saint and the Sinner Lady", "label": "Impulse!", "year": "1963", "img": "037_Charles_Mingus_-_The_Black_Saint_and_the_Sinner_Lady.jpg"}, {"n": 38, "artist": "Cannonball Adderley", "album": "Somethin’ Else", "label": "Blue Note", "year": "1959", "img": "038_Cannonball_Adderley_-_Somethin_Else.jpg"}, {"n": 39, "artist": "The Tony Williams Lifetime", "album": "Emergency!", "label": "Polydor", "year": "1969", "img": "039_The_Tony_Williams_Lifetime_-_Emergency.jpg"}, {"n": 40, "artist": "Billie Holiday", "album": "Billie Holiday at JATP", "label": "Clef/Verve", "year": "1945–1946", "img": "040_Billie_Holiday_-_Billie_Holiday_at_JATP.jpg"}, {"n": 41, "artist": "Chick Corea", "album": "Return to Forever", "label": "ECM", "year": "1971", "img": "041_Chick_Corea_-_Return_to_Forever.jpg"}, {"n": 42, "artist": "Stan Getz", "album": "Focus", "label": "Verve", "year": "1961", "img": "042_Stan_Getz_-_Focus.jpg"}, {"n": 43, "artist": "Miles Davis", "album": "Sketches of Spain", "label": "Columbia", "year": "1960", "img": "043_Miles_Davis_-_Sketches_of_Spain.png"}, {"n": 44, "artist": "George Russell", "album": "The Jazz Workshop", "label": "RCA Victor", "year": "1956", "img": "044_George_Russell_-_The_Jazz_Workshop.jpg"}, {"n": 45, "artist": "John Coltrane", "album": "Impressions", "label": "Impulse!", "year": "1961–1963", "img": "045_John_Coltrane_-_Impressions.jpg"}, {"n": 46, "artist": "Andrew Hill", "album": "Point of Departure", "label": "Blue Note", "year": "1964", "img": "046_Andrew_Hill_-_Point_of_Departure.jpg"}, {"n": 47, "artist": "Sonny Rollins", "album": "The Bridge", "label": "RCA Victor", "year": "1962", "img": "047_Sonny_Rollins_-_The_Bridge.jpg"}, {"n": 48, "artist": "Sun Ra", "album": "The Heliocentric Worlds of Sun Ra, Vol. 1", "label": "ESP-Disk", "year": "1965", "img": "048_Sun_Ra_-_The_Heliocentric_Worlds_of_Sun_Ra_Vol_1.jpg"}, {"n": 49, "artist": "Dizzy Gillespie", "album": "Shaw ’Nuff", "label": "Musicraft", "year": "1945/46", "img": "049_Dizzy_Gillespie_-_Shaw_Nuff.jpg"}, {"n": 50, "artist": "Lennie Tristano", "album": "Tristano", "label": "Atlantic", "year": "1955", "img": "050_Lennie_Tristano_-_Tristano.jpg"}, {"n": 51, "artist": "John Zorn", "album": "Naked City", "label": "Elektra/Nonesuch", "year": "1989", "img": "051_John_Zorn_-_Naked_City.jpg"}, {"n": 52, "artist": "John McLaughlin", "album": "Extrapolation", "label": "Marmalade", "year": "1969", "img": "052_John_McLaughlin_-_Extrapolation.jpg"}, {"n": 53, "artist": "Pharoah Sanders", "album": "Karma", "label": "Impulse!", "year": "1969", "img": "053_Pharoah_Sanders_-_Karma.jpg"}, {"n": 54, "artist": "Lester Young", "album": "Lester Young/Buddy Rich Trio", "label": "Verve", "year": "1946", "img": "054_Lester_Young_-_Lester_Young_Buddy_Rich_Trio.jpg"}, {"n": 55, "artist": "John Coltrane", "album": "Ascension", "label": "Impulse!", "year": "1965", "img": "055_John_Coltrane_-_Ascension.jpg"}, {"n": 56, "artist": "Art Ensemble of Chicago", "album": "A Jackson in Your House", "label": "BYG Actuel", "year": "1969", "img": "056_Art_Ensemble_of_Chicago_-_A_Jackson_in_Your_House.jpg"}, {"n": 57, "artist": "Horace Silver", "album": "Song for My Father", "label": "Blue Note", "year": "1963/64", "img": "057_Horace_Silver_-_Song_for_My_Father.jpg"}, {"n": 58, "artist": "Clifford Brown/Max Roach Quintet", "album": "Clifford Brown and Max Roach", "label": "EmArcy", "year": "1954", "img": "058_Clifford_Brown_Max_Roach_Quintet_-_Clifford_Brown_and_Max_Roach.jpg"}, {"n": 59, "artist": "Coleman Hawkins", "album": "Body and Soul", "label": "RCA Bluebird", "year": "1939–1956", "img": "059_Coleman_Hawkins_-_Body_and_Soul.jpg"}, {"n": 60, "artist": "Peter Brötzmann Octet", "album": "Machine Gun", "label": "FMP", "year": "1969", "img": "060_Peter_Brotzmann_Octet_-_Machine_Gun.jpg"}, {"n": 61, "artist": "Miles Davis", "album": "Birth of the Cool", "label": "Capitol", "year": "1949/50", "img": "061_Miles_Davis_-_Birth_of_the_Cool.jpg"}, {"n": 62, "artist": "Count Basie", "album": "The Atomic Mr. Basie", "label": "Roulette", "year": "1957", "img": "062_Count_Basie_-_The_Atomic_Mr_Basie.jpg"}, {"n": 63, "artist": "Archie Shepp", "album": "Four for Trane", "label": "Impulse!", "year": "1964", "img": "063_Archie_Shepp_-_Four_for_Trane.jpg"}, {"n": 64, "artist": "Brad Mehldau", "album": "Art of the Trio Vol. 3", "label": "Warner", "year": "1998", "img": "064_Brad_Mehldau_-_Art_of_the_Trio_Vol_3.jpg"}, {"n": 65, "artist": "Gerry Mulligan", "album": "Gerry Mulligan Quartet", "label": "Pacific Jazz", "year": "1952", "img": "065_Gerry_Mulligan_-_Gerry_Mulligan_Quartet.jpg"}, {"n": 66, "artist": "Gil Evans", "album": "The Individualism of Gil Evans", "label": "Verve", "year": "1963/64", "img": "066_Gil_Evans_-_The_Individualism_of_Gil_Evans.jpg"}, {"n": 67, "artist": "John Handy", "album": "Live at Monterey Jazz Festival", "label": "Columbia", "year": "1965", "img": "067_John_Handy_-_Live_at_Monterey_Jazz_Festival.jpg"}, {"n": 68, "artist": "Esbjörn Svensson Trio", "album": "From Gagarin’s Point of View", "label": "ACT", "year": "1999", "img": "068_Esbjorn_Svensson_Trio_-_From_Gagarins_Point_of_View.jpg"}, {"n": 69, "artist": "Stan Tracey", "album": "Jazz Suite Inspired by Dylan Thomas’ Under Milk Wood", "label": "EMI/Columbia", "year": "1965", "img": "069_Stan_Tracey_-_Jazz_Suite_Inspired_by_Dylan_Thomas_Under_Milk_Wood.jpg"}, {"n": 70, "artist": "Dollar Brand (Abdullah Ibrahim)", "album": "African Marketplace", "label": "Elektra/Musician", "year": "1980", "img": "070_Dollar_Brand_-_African_Marketplace.jpg"}, {"n": 71, "artist": "Wayne Shorter", "album": "Speak No Evil", "label": "Blue Note", "year": "1964", "img": "071_Wayne_Shorter_-_Speak_No_Evil.jpg"}, {"n": 72, "artist": "Thelonious Monk", "album": "Genius of Modern Music – Vol 1", "label": "Blue Note", "year": "1947", "img": "072_Thelonious_Monk_-_Genius_of_Modern_Music_Vol_1.jpg"}, {"n": 73, "artist": "Roland Kirk", "album": "Rip, Rig and Panic", "label": "Limelight", "year": "1965", "img": "073_Roland_Kirk_-_Rip_Rig_and_Panic.jpg"}, {"n": 74, "artist": "Herbie Hancock", "album": "The New Standard", "label": "Verve", "year": "1996", "img": "074_Herbie_Hancock_-_The_New_Standard.jpg"}, {"n": 75, "artist": "Oscar Peterson", "album": "Night Train", "label": "Verve", "year": "1962", "img": "075_Oscar_Peterson_-_Night_Train.jpg"}, {"n": 76, "artist": "Charles Lloyd", "album": "Dream Weaver", "label": "Atlantic", "year": "1965", "img": "076_Charles_Lloyd_-_Dream_Weaver.jpg"}, {"n": 77, "artist": "Art Tatum", "album": "The Genius of Art Tatum No. 1", "label": "Clef", "year": "1953", "img": "077_Art_Tatum_-_The_Genius_of_Art_Tatum_No_1.jpg"}, {"n": 78, "artist": "Betty Carter", "album": "The Audience with Betty Carter", "label": "Betcar", "year": "1979", "img": "078_Betty_Carter_-_The_Audience_with_Betty_Carter.jpg"}, {"n": 79, "artist": "Oliver Nelson", "album": "The Blues and the Abstract Truth", "label": "Impulse!", "year": "1961", "img": "079_Oliver_Nelson_-_The_Blues_and_the_Abstract_Truth.jpg"}, {"n": 80, "artist": "John Surman", "album": "Tales of the Algonquin", "label": "Deram", "year": "1971", "img": "080_John_Surman_-_Tales_of_the_Algonquin.jpg"}, {"n": 81, "artist": "Eberhard Weber", "album": "The Colours of Chloë", "label": "ECM", "year": "1973", "img": "081_Eberhard_Weber_-_The_Colours_of_Chloe.jpg"}, {"n": 82, "artist": "Steve Coleman and the Five Elements", "album": "The Tao of Mad Phat: Fringe Zones", "label": "RCA/Novus", "year": "1993", "img": "082_Steve_Coleman_and_the_Five_Elements_-_The_Tao_of_Mad_Phat_Fringe_Zones.jpg"}, {"n": 83, "artist": "Diana Krall", "album": "Love Scenes", "label": "Impulse!", "year": "1997", "img": "083_Diana_Krall_-_Love_Scenes.jpg"}, {"n": 84, "artist": "Anthony Braxton", "album": "For Alto", "label": "Delmark", "year": "1969", "img": "084_Anthony_Braxton_-_For_Alto.jpg"}, {"n": 85, "artist": "Krzysztof Komeda", "album": "Astigmatic", "label": "Nagrania Muza", "year": "1965", "img": "085_Krzysztof_Komeda_-_Astigmatic.jpg"}, {"n": 86, "artist": "Steps Ahead", "album": "Steps Ahead", "label": "Elektra/Musician", "year": "1983", "img": "086_Steps_Ahead_-_Steps_Ahead.jpg"}, {"n": 87, "artist": "Django Reinhardt", "album": "Rétrospective 1934–53", "label": "Saga", "year": "1934–1953", "img": "087_Django_Reinhardt_-_Retrospective_193453.jpg"}, {"n": 88, "artist": "Joe Harriott-John Mayer Double Quintet", "album": "Indo-Jazz Suite", "label": "EMI Columbia", "year": "1965", "img": "088_Joe_Harriott_John_Mayer_Double_Quintet_-_Indo-Jazz_Suite.jpg"}, {"n": 89, "artist": "Jackie McLean", "album": "Let Freedom Ring", "label": "Blue Note", "year": "1962", "img": "089_Jackie_McLean_-_Let_Freedom_Ring.jpg"}, {"n": 90, "artist": "Charlie Haden", "album": "Liberation Music Orchestra", "label": "Impulse! Records", "year": "1969", "img": "090_Charlie_Haden_-_Liberation_Music_Orchestra.jpg"}, {"n": 91, "artist": "Music Improvisation Company", "album": "Music Improvisation Company", "label": "ECM", "year": "1970", "img": "091_Music_Improvisation_Company_-_Music_Improvisation_Company.jpg"}, {"n": 92, "artist": "Sarah Vaughan", "album": "Sarah Vaughan with Clifford Brown", "label": "EmArcy", "year": "1954", "img": "092_Sarah_Vaughan_-_Sarah_Vaughan_with_Clifford_Brown.jpg"}, {"n": 93, "artist": "Jan Johansson", "album": "Jazz på svenska", "label": "Megafon", "year": "1962–1964", "img": "093_Jan_Johansson_-_Jazz_pa_svenska.jpg"}, {"n": 94, "artist": "Cassandra Wilson", "album": "Blue Light ’Til Dawn", "label": "Blue Note", "year": "1993", "img": "094_Cassandra_Wilson_-_Blue_Light_Til_Dawn.jpg"}, {"n": 95, "artist": "Wynton Marsalis", "album": "Black Codes from the Underground", "label": "Columbia", "year": "1985", "img": "095_Wynton_Marsalis_-_Black_Codes_from_the_Underground.jpg"}, {"n": 96, "artist": "Medeski, Martin & Wood", "album": "Combustication", "label": "Blue Note", "year": "1998", "img": "096_Medeski_Martin_Wood_-_Combustication.jpg"}, {"n": 97, "artist": "Tomasz Stańko", "album": "Soul of Things", "label": "ECM", "year": "2001", "img": "097_Tomasz_Stanko_-_Soul_of_Things.jpg"}, {"n": 98, "artist": "Courtney Pine", "album": "Journey to the Urge Within", "label": "Antilles", "year": "1986", "img": "098_Courtney_Pine_-_Journey_to_the_Urge_Within.jpg"}, {"n": 99, "artist": "The Bad Plus", "album": "These Are the Vistas", "label": "Columbia", "year": "2005", "img": "099_The_Bad_Plus_-_These_Are_the_Vistas.jpg"}, {"n": 100, "artist": "Polar Bear", "album": "Held On the Tips of Fingers", "label": "Babel", "year": "2004–2005", "img": "100_Polar_Bear_-_Held_On_the_Tips_of_Fingers.jpg"}];
+const grid = document.getElementById("grid");
+const esc = s => s.replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+grid.innerHTML = ALBUMS.map((a, i) => `
+  <button class="tile" data-i="${i}" aria-label="${a.n}. ${esc(a.artist)} – ${esc(a.album)}">
+    <img src="${encodeURI(a.img)}" alt="" loading="lazy">
+    <span class="badge">${a.n}</span>
+    <span class="info">
+      <span class="rank">${a.n}</span>
+      <span class="album">${esc(a.album)}</span>
+      <span class="meta">${esc(a.artist)}</span>
+      <span class="meta">${esc(a.label)} · ${esc(a.year)}</span>
+    </span>
+  </button>`).join("");
+
+// Letterbox very wide/tall covers instead of cropping them
+grid.querySelectorAll(".tile img").forEach(img => {
+  const check = () => { const r = img.naturalWidth / img.naturalHeight; if (r > 1.25 || r < 0.8) img.parentElement.classList.add("wide"); };
+  img.complete ? check() : img.addEventListener("load", check);
+});
+
+// Lightbox
+const lb = document.getElementById("lb");
+let cur = 0;
+function show(i) {
+  cur = (i + ALBUMS.length) % ALBUMS.length;
+  const a = ALBUMS[cur];
+  lb.querySelector("img").src = encodeURI(a.img);
+  lb.querySelector("img").alt = `${a.artist} – ${a.album}`;
+  lb.querySelector(".n").textContent = "#" + a.n;
+  lb.querySelector(".t").textContent = a.album;
+  lb.querySelector(".m").textContent = `${a.artist} · ${a.label} · ${a.year}`;
+  lb.classList.add("open");
+}
+grid.addEventListener("click", e => { const t = e.target.closest(".tile"); if (t) show(+t.dataset.i); });
+lb.addEventListener("click", e => {
+  if (e.target.closest(".prev")) return show(cur - 1);
+  if (e.target.closest(".next")) return show(cur + 1);
+  lb.classList.remove("open");
+});
+document.addEventListener("keydown", e => {
+  if (!lb.classList.contains("open")) return;
+  if (e.key === "Escape") lb.classList.remove("open");
+  if (e.key === "ArrowLeft") show(cur - 1);
+  if (e.key === "ArrowRight") show(cur + 1);
+});
+</script>
+</body>
+</html>
